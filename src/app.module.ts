@@ -1,38 +1,38 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { GraphQLModule } from '@nestjs/graphql';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { GraphQLModule } from "@nestjs/graphql";
+import { TypeOrmModule } from "@nestjs/typeorm";
 // When it's not a typescript module, we use "import * as module"
-import * as Joi from 'joi';
-import { UsersModule } from './users/users.module';
-import { User } from './users/entities/user.entity';
-import { JwtModule } from './jwt/jwt.module';
-import { AuthModule } from './auth/auth.module';
-import { Verification } from './users/entities/verification.entity';
-import { MailModule } from './mail/mail.module';
-import { Restaurant } from './restaurants/entities/restaurants.entity';
-import { Category } from './restaurants/entities/category.entity';
-import { RestaurantsModule } from './restaurants/restaurants.module';
-import { Dish } from './restaurants/entities/dish.entity';
-import { OrdersModule } from './orders/orders.module';
-import { Order } from './orders/entities/order.entity';
-import { OrderItem } from './orders/entities/order-item.entity';
-import { CommonModule } from './common/common.module';
-import { PaymentsModule } from './payments/payments.module';
-import { Payment } from './payments/entities/payment.entity';
-import { ScheduleModule } from '@nestjs/schedule';
-import { UploadsModule } from './uploads/uploads.module';
+import * as Joi from "joi";
+import { UsersModule } from "./users/users.module";
+import { User } from "./users/entities/user.entity";
+import { JwtModule } from "./jwt/jwt.module";
+import { AuthModule } from "./auth/auth.module";
+import { Verification } from "./users/entities/verification.entity";
+import { MailModule } from "./mail/mail.module";
+import { Restaurant } from "./restaurants/entities/restaurants.entity";
+import { Category } from "./restaurants/entities/category.entity";
+import { RestaurantsModule } from "./restaurants/restaurants.module";
+import { Dish } from "./restaurants/entities/dish.entity";
+import { OrdersModule } from "./orders/orders.module";
+import { Order } from "./orders/entities/order.entity";
+import { OrderItem } from "./orders/entities/order-item.entity";
+import { CommonModule } from "./common/common.module";
+import { PaymentsModule } from "./payments/payments.module";
+import { Payment } from "./payments/entities/payment.entity";
+import { ScheduleModule } from "@nestjs/schedule";
+import { UploadsModule } from "./uploads/uploads.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.NODE_ENV === 'dev' ? '.env.dev' : '.env.test',
-      ignoreEnvFile: process.env.NODE_ENV === 'production',
+      envFilePath: process.env.NODE_ENV === "dev" ? ".env.dev" : ".env.test",
+      ignoreEnvFile: process.env.NODE_ENV === "prod",
       // validationSchema will make program NOT to open
       // when the env variables are not ready
       validationSchema: Joi.object({
-        NODE_ENV: Joi.string().valid('dev', 'production', 'test').required(),
+        NODE_ENV: Joi.string().valid("dev", "prod", "test").required(),
         DB_PASSWORD: Joi.string().required(),
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.string().required(),
@@ -47,27 +47,16 @@ import { UploadsModule } from './uploads/uploads.module';
       }),
     }),
     TypeOrmModule.forRoot({
-      type: 'postgres',
+      type: "postgres",
       host: process.env.DB_HOST,
       port: +process.env.DB_PORT,
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging:
-        process.env.NODE_ENV !== 'production' &&
-        process.env.NODE_ENV !== 'test',
-      entities: [
-        User,
-        Verification,
-        Restaurant,
-        Category,
-        Dish,
-        Order,
-        OrderItem,
-        Payment,
-      ],
-      ssl: process.env.NODE_ENV === 'production' && {
+      synchronize: process.env.NODE_ENV !== "prod",
+      logging: process.env.NODE_ENV !== "prod" && process.env.NODE_ENV !== "test",
+      entities: [User, Verification, Restaurant, Category, Dish, Order, OrderItem, Payment],
+      ssl: process.env.NODE_ENV === "prod" && {
         rejectUnauthorized: false,
       },
     }),
@@ -78,7 +67,7 @@ import { UploadsModule } from './uploads/uploads.module';
       installSubscriptionHandlers: true, // This will subscription for graphql
       // 'context' sends HTTP Request to graphql server. It's provided from Apollo
       context: ({ req, connection }) => {
-        const TOKEN_KEY = 'x-jwt';
+        const TOKEN_KEY = "x-jwt";
         // Handling websocket and http
         return {
           token: req ? req.headers[TOKEN_KEY] : connection.context[TOKEN_KEY],
