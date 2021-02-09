@@ -1,23 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { PubSub } from 'graphql-subscriptions';
-import {
-  NEW_COOKED_ORDER,
-  NEW_ORDER_UPDATE,
-  NEW_PENDING_ORDER,
-  PUB_SUB,
-} from 'src/common/common.constants';
-import { Dish } from 'src/restaurants/entities/dish.entity';
-import { Restaurant } from 'src/restaurants/entities/restaurants.entity';
-import { User, UserRole } from 'src/users/entities/user.entity';
-import { Repository } from 'typeorm';
-import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
-import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
-import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
-import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
-import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
-import { OrderItem } from './entities/order-item.entity';
-import { Order, OrderStatus } from './entities/order.entity';
+import { Inject, Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { PubSub } from "graphql-subscriptions";
+import { NEW_COOKED_ORDER, NEW_ORDER_UPDATE, NEW_PENDING_ORDER, PUB_SUB } from "src/common/common.constants";
+import { Dish } from "src/restaurants/entities/dish.entity";
+import { Restaurant } from "src/restaurants/entities/restaurants.entity";
+import { User, UserRole } from "src/users/entities/user.entity";
+import { Repository } from "typeorm";
+import { CreateOrderInput, CreateOrderOutput } from "./dtos/create-order.dto";
+import { EditOrderInput, EditOrderOutput } from "./dtos/edit-order.dto";
+import { GetOrderInput, GetOrderOutput } from "./dtos/get-order.dto";
+import { GetOrdersInput, GetOrdersOutput } from "./dtos/get-orders.dto";
+import { TakeOrderInput, TakeOrderOutput } from "./dtos/take-order.dto";
+import { OrderItem } from "./entities/order-item.entity";
+import { Order, OrderStatus } from "./entities/order.entity";
 
 @Injectable()
 export class OrdersService {
@@ -34,19 +29,16 @@ export class OrdersService {
     @InjectRepository(Dish)
     private readonly dishes: Repository<Dish>,
 
-    @Inject(PUB_SUB) private readonly pubsub: PubSub,
+    @Inject(PUB_SUB) private readonly pubsub: PubSub
   ) {}
 
-  async createOrder(
-    customer: User,
-    { restaurantId, items }: CreateOrderInput,
-  ): Promise<CreateOrderOutput> {
+  async createOrder(customer: User, { restaurantId, items }: CreateOrderInput): Promise<CreateOrderOutput> {
     try {
       const restaurant = await this.restaurants.findOne(restaurantId);
       if (!restaurant) {
         return {
           ok: false,
-          error: 'Restaurant not found',
+          error: "Restaurant not found",
         };
       }
       let orderFinalPrice = 0;
@@ -56,27 +48,21 @@ export class OrdersService {
         if (!dish) {
           return {
             ok: false,
-            error: 'Dish not found',
+            error: "Dish not found",
           };
         }
         let dishFinalPrice: number = dish.price;
         console.log(`Dish Price: $USD ${dish.price}`);
         for (const itemOption of item.options) {
-          const dishOption = dish.options.find(
-            dishOption => dishOption.name === itemOption.name,
-          );
+          const dishOption = dish.options.find((dishOption) => dishOption.name === itemOption.name);
           if (dishOption) {
             if (dishOption.extra) {
               console.log(`${dishOption.extra}`);
               dishFinalPrice = dishFinalPrice + dishOption.extra;
             } else {
-              const dishOptionChoice = dishOption.choices?.find(
-                optionChoice => optionChoice.name === itemOption.choice,
-              );
+              const dishOptionChoice = dishOption.choices?.find((optionChoice) => optionChoice.name === itemOption.choice);
               if (dishOptionChoice.extra) {
-                console.log(
-                  `${dishOption.name} ${dishOptionChoice.name} + $USD ${dishOptionChoice.extra}`,
-                );
+                console.log(`${dishOption.name} ${dishOptionChoice.name} + $USD ${dishOptionChoice.extra}`);
                 dishFinalPrice = dishFinalPrice + dishOptionChoice.extra;
               }
             }
@@ -95,7 +81,7 @@ export class OrdersService {
           restaurant,
           total: orderFinalPrice,
           items: orderItems,
-        }),
+        })
       );
       console.log(order);
       // Trigger subscription
@@ -109,15 +95,12 @@ export class OrdersService {
     } catch {
       return {
         ok: false,
-        error: 'Cannot create order',
+        error: "Cannot create order",
       };
     }
   }
 
-  async getOrders(
-    user: User,
-    { status }: GetOrdersInput,
-  ): Promise<GetOrdersOutput> {
+  async getOrders(user: User, { status }: GetOrdersInput): Promise<GetOrdersOutput> {
     try {
       let orders: Order[];
       // Client Orders
@@ -143,11 +126,11 @@ export class OrdersService {
             owner: user,
             ...(status && { status }),
           },
-          relations: ['orders'],
+          relations: ["orders"],
         });
-        orders = restaurants.map(restaurant => restaurant.orders).flat(1);
+        orders = restaurants.map((restaurant) => restaurant.orders).flat(1);
         if (status) {
-          orders = orders.filter(order => order.status === status);
+          orders = orders.filter((order) => order.status === status);
         }
       }
       return {
@@ -157,7 +140,7 @@ export class OrdersService {
     } catch {
       return {
         ok: false,
-        error: 'Cannot Get Orders',
+        error: "Cannot Get Orders",
       };
     }
   }
@@ -180,22 +163,22 @@ export class OrdersService {
   async getOrder(
     user: User,
     // { item: newItemName } will let us use new name for the destructed item
-    { id: orderId }: GetOrderInput,
+    { id: orderId }: GetOrderInput
   ): Promise<GetOrderOutput> {
     try {
       const order = await this.orders.findOne(orderId, {
-        relations: ['restaurant'],
+        relations: ["restaurant"],
       });
       if (!order) {
         return {
           ok: false,
-          error: 'Order not found',
+          error: "Order not found",
         };
       }
       if (!this.canSeeOrder(user, order)) {
         return {
           ok: false,
-          error: 'You cannot see that',
+          error: "You cannot see that",
         };
       }
       return {
@@ -205,21 +188,18 @@ export class OrdersService {
     } catch {
       return {
         ok: false,
-        error: 'Cannot Get Order',
+        error: "Cannot Get Order",
       };
     }
   }
 
-  async editOrder(
-    user: User,
-    { id: orderId, status }: EditOrderInput,
-  ): Promise<EditOrderOutput> {
+  async editOrder(user: User, { id: orderId, status }: EditOrderInput): Promise<EditOrderOutput> {
     try {
       const order = await this.orders.findOne(orderId);
       if (!order) {
         return {
           ok: false,
-          error: 'User not found',
+          error: "User not found",
         };
       }
       if (!this.canSeeOrder(user, order)) {
@@ -242,17 +222,14 @@ export class OrdersService {
       }
       // Delivery man's edit
       if (user.role === UserRole.Delivery) {
-        if (
-          status !== OrderStatus.PickedUp &&
-          status !== OrderStatus.Delivered
-        ) {
+        if (status !== OrderStatus.PickedUp && status !== OrderStatus.Delivered) {
           canEdit = false;
         }
       }
       if (!canEdit) {
         return {
           ok: false,
-          error: 'You are not allowed to do that',
+          error: "You are not allowed to do that",
         };
       }
       await this.orders.save({
@@ -274,27 +251,24 @@ export class OrdersService {
     } catch {
       return {
         ok: false,
-        error: 'Cannot Edit Order',
+        error: "Cannot Edit Order",
       };
     }
   }
 
-  async takeOrder(
-    driver: User,
-    { id: orderId }: TakeOrderInput,
-  ): Promise<TakeOrderOutput> {
+  async takeOrder(driver: User, { id: orderId }: TakeOrderInput): Promise<TakeOrderOutput> {
     try {
       const order = await this.orders.findOne(orderId);
       if (!order) {
         return {
           ok: false,
-          error: 'Order not found',
+          error: "Order not found",
         };
       }
       if (order.driver) {
         return {
           ok: false,
-          error: 'This order already has a driver',
+          error: "This order already has a driver",
         };
       }
       await this.orders.save({
@@ -310,7 +284,7 @@ export class OrdersService {
     } catch {
       return {
         ok: false,
-        error: 'Cannot take order',
+        error: "Cannot take order",
       };
     }
   }
